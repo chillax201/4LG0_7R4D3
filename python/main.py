@@ -2,7 +2,7 @@ import pandas as pd
 import mysql.connector as mysql
 import requests
 
-# MySQL connection setup (update credentials as needed)
+# MySQL connection setup (update credentials as needed)\
 conn = mysql.connect(
     host='127.0.0.1',
     user='root',
@@ -13,6 +13,9 @@ conn = mysql.connect(
 )
 
 cursor = conn.cursor()
+
+#specify the tickers that you are interested in
+tickers = ["MSFT", "IBM"]
 
 def fetch_d(ticker, interval='5min'):
     url = f'https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={ticker}&interval={interval}&apikey=OKBWHTFPHERJ7JQV'
@@ -75,25 +78,23 @@ def store2db(data, lat_stamp):
         print("No data to store")
 
 def main():
-    tickers = ["MSFT", "IBM"]
-    for ticker in tickers:
-        condb(ticker)
-        latest_timestamp = latest_stamp(ticker)
-        data = fetch_d(ticker)
-        store2db(data, latest_timestamp)
-
-if True:
-    a = input("Enter 'a' to fetch and store data, 'b' to query data, 'c' to exit: ")
-    if a == 'a':
-        main()
-    if a == 'b':
-        b = input("Enter ticker to query: ")
-        cursor.execute(f"SELECT * FROM stocks_{b};")
-        results = cursor.fetchall()
-        for result in results:
-            print(result)
-    if a == 'c':
-        exit()
+    
+    if True:
+        a = input("Enter 'a' to fetch and store data, 'b' to query data, 'c' to exit: ")
+        if a == 'a':
+            for ticker in tickers:
+                condb(ticker)
+                latest_timestamp = latest_stamp(ticker)
+                data = fetch_d(ticker)
+                store2db(data, latest_timestamp)
+        if a == 'b':
+            b = input("Enter ticker to query: ")
+            cursor.execute(f"SELECT * FROM stocks_{b};")
+            results = cursor.fetchall()
+            for result in results:
+                print(result)
+        if a == 'c':
+            exit()
 
 # Close connection
 conn.close()
