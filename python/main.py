@@ -1,6 +1,16 @@
 import pandas as pd
 import mysql.connector as mysql
 import requests
+import sys
+import os
+import json
+
+arg = sys.argv
+with open('jsonsyn.json', 'r') as f:
+    jsonsyn = json.load(f)
+
+#Enter your API key
+apikey = 'OKBWHTFPHERJ7JQV'
 
 # MySQL connection setup (update credentials as needed)\
 conn = mysql.connect(
@@ -13,12 +23,16 @@ conn = mysql.connect(
 )
 
 cursor = conn.cursor()
+#tickers = []
+#jsonsyn['tickers'] = tickers
+#with open('jsonsyn.json', 'w') as f:
+#    json.dump(jsonsyn, f, indent=4)
 
 #specify the tickers that you are interested in
-tickers = ["MSFT", "IBM"]
+tickers = jsonsyn.get('tickers')
 
 def fetch_d(ticker, interval='5min'):
-    url = f'https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={ticker}&interval={interval}&apikey=OKBWHTFPHERJ7JQV'
+    url = f'https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={ticker}&interval={interval}&apikey={apikey}'
     response = requests.get(url)
     data = response.json()
 
@@ -79,22 +93,37 @@ def store2db(data, lat_stamp):
 
 def main():
     
-    if True:
-        a = input("Enter 'a' to fetch and store data, 'b' to query data, 'c' to exit: ")
-        if a == 'a':
-            for ticker in tickers:
-                condb(ticker)
-                latest_timestamp = latest_stamp(ticker)
-                data = fetch_d(ticker)
-                store2db(data, latest_timestamp)
-        if a == 'b':
-            b = input("Enter ticker to query: ")
-            cursor.execute(f"SELECT * FROM stocks_{b};")
-            results = cursor.fetchall()
-            for result in results:
-                print(result)
-        if a == 'c':
-            exit()
+    if arg[1] == "refresh":
+        for ticker in tickers:
+            condb(ticker)
+            latest_timestamp = latest_stamp(ticker)
+            data = fetch_d(ticker)
+            store2db(data, latest_timestamp)
+    if arg[1] == "show":
+        try:
+            cursor.execute("SHOW TABLES")
+            tables = cursor.fetchall()
+            if f"stocks_{arg[2].upper()}" not in [table[0] for table in tables]:
+                print("ticker doesn't exist")
+            else:
+                cursor.execute(f"SELECT * FROM stocks_{arg[2].upper()};")
+                results = cursor.fetchall()
+                for result in results:
+                    print(result)
+        except IndexError:
+            print("please pass a ticker arguement")
+    if arg[1] == "add":
+        try:
+            tickers.append(arg[2].upper())
+            jsonsyn['tickers'] = tickers
+            with open('jsonsyn.json', 'w') as f:
+                json.dump(jsonsyn, f, indent=4)
+            print(f"Ticker {arg[2].upper()} added.")
+        except IndexError:
+            print("please provide a ticker arguement")
+
+if __name__ == "__main__":
+    main()
 
 # Close connection
 conn.close()
