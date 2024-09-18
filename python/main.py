@@ -23,10 +23,6 @@ conn = mysql.connect(
 )
 
 cursor = conn.cursor()
-#tickers = []
-#jsonsyn['tickers'] = tickers
-#with open('jsonsyn.json', 'w') as f:
-#    json.dump(jsonsyn, f, indent=4)
 
 #specify the tickers that you are interested in
 tickers = jsonsyn.get('tickers')
